@@ -1,10 +1,9 @@
 LIBNAME=growth
-LD=ld
 
-OBJS=	carmasub.o cgamma.o elliptic.o
+OBJS=	carmasub.o cgamma.o elliptic.o resid.o
 
 $(LIBNAME).$(SHLIBEXT):	$(OBJS)
-	$(LD) $(SHLIBLDFLAGS) -o $@ $(OBJS)
+	$(SHLIBLD) $(SHLIBLDFLAGS) $(FLIBS) -o $@ $(OBJS)
 
 clean:
 	@rm -f *.o *.$(SHLIBEXT)

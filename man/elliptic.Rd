@@ -1,23 +1,19 @@
 \name{elliptic}
-\title{Multivariate elliptically-contoured repeated measurements
-models for linear and nonlinear changes over time in the presence of
-time-varying covariates and with AR(1) and two levels of variance
-components}
+\title{Multivariate elliptically-contoured and Student t repeated
+measurements models for linear and nonlinear changes over time in the
+presence of time-varying covariates and with AR(1) and two levels of
+variance components}
 \usage{
-elliptic(response, model="linear", times=NULL, dose=NULL, ccov=NULL,
-	tvcov=NULL, nest=NULL, torder=0, interaction=NULL,
-	transform="identity", link="identity", autocorr="exponential",
-	pell=NULL, preg=rep(1,4), pvar=var(y), varfn=NULL, pre=NULL,
-	par=NULL, delta=NULL, envir=sys.frame(sys.parent()),
+elliptic(response, model="linear", distribution="elliptic",
+	times=NULL, dose=NULL, ccov=NULL, tvcov=NULL, nest=NULL,
+	torder=0, interaction=NULL, transform="identity",
+	link="identity", autocorr="exponential", pell=NULL,
+	preg=rep(1,4), pvar=var(y), varfn=NULL, pre=NULL, par=NULL,
+	delta=NULL, shfn=F, common=F, envir=sys.frame(sys.parent()),
 	print.level=0, gradtol=0.00001, typsiz=abs(theta),
 	stepmax=10*sqrt(theta\%*\%theta), steptol=0.00001,
 	iterlim=100, ndigit=10, fscale=1)
 }
-\alias{elliptic}
-\alias{coefficients.elliptic}
-\alias{deviance.elliptic}
-\alias{print.elliptic}
-\alias{residuals.elliptic}
 \arguments{
 \item{response}{A list of two or three column matrices with response
 values, times, and possibly nesting categories, for each individual,
@@ -35,6 +31,11 @@ the location parameter in the Wilkinson and Rogers notation or a
 general function with named unknown parameters that describes the
 location, returning a vector the same length as the number of
 observations, in which case ccov and tvcov cannot be used.}
+\item{distribution}{If \code{elliptic}, a multivariate
+elliptically-contoured distribution is fitted unless \code{pell} is
+NULL, in which case a multivariate normal distribution is fitted. If
+\code{Student  t}, a multivariate Student t distribution is fitted and
+a value must be given for \code{pell}.}
 \item{times}{When \code{response} is a matrix, a vector of possibly
 unequally spaced times when they are the same for all individuals or a
 matrix of times. Not necessary if equally spaced. Ignored if response
@@ -44,22 +45,26 @@ individual.}
 \item{ccov}{A vector or matrix containing time-constant baseline
 covariates with one line per individual, a model formula using
 vectors of the same size, or an object of class, tccov (created by
-\code{\link{tcctomat}}). For the \code{pkpd} and \code{logistic}
-models, all variables must be binary (or factor variables) as
-different values of all parameters are calculated for all combinations
-of these variables (except for the logistic model when a time-varying
-covariate is present). Cannot be used when model is a function.
-Ignored if response has class, repeated.}
+\code{\link{tcctomat}}). If response has class, repeated, with a
+\code{linear}, \code{logistic}, or \code{pkpd} model, the covariates
+must be supplied as a Wilkinson and Rogers formula unless none are
+to be used. For the \code{pkpd} and \code{logistic} models, all
+variables must be binary (or factor variables) as different values of
+all parameters are calculated for all combinations of these variables
+(except for the logistic model when a time-varying covariate is
+present). It cannot be used when model is a function.}
 \item{tvcov}{A list of vectors or matrices with time-varying
 covariates for each individual (one column per variable), a matrix or
 dataframe of such covariate values (if only one covariate), or an
 object of class, tvcov (created by \code{\link{tvctomat}}). If times
 are not the same as for responses, the list can be created with
-\code{\link{gettvc}}. Only one time-varying covariate is allowed
-except for the \code{linear model}; if more are required, set
-\code{model} equal to the appropriate mean function. This argument
-cannot be used when model is a function and is ignored if response has
-class, repeated.}
+\code{\link{gettvc}}. If response has class, repeated, with a
+\code{linear}, \code{logistic}, or \code{pkpd} model, the covariates
+must be supplied as a Wilkinson and Rogers formula unless none are
+to be used. Only one time-varying covariate is allowed except for the
+\code{linear model}; if more are required, set \code{model} equal to
+the appropriate mean function. This argument cannot be used when model
+is a function.}
 \item{nest}{When \code{response} is a matrix, a vector of length equal
 to the number of responses per individual indicating which responses
 belong to which nesting category. Categoriess must be consecutive
@@ -85,7 +90,9 @@ rho^((t_i-t_j)^2); \code{cauchy} is 1/(1+rho(t_i-t_j)^2);
 Ornstein-Uhlenbeck process, (2rho min(t_i,t_j)+exp(-rho t_i)
 +exp(-rho t_j)-1 -exp(rho|ti-t_j|))/2rho^3.}
 \item{pell}{Initial estimate of the power parameter of the
-multivariate elliptically-contoured distribution. If missing, the
+multivariate elliptically-contoured distribution or of the degrees of
+freedom parameter of the multivariate Student t distribution. If
+missing and \code{distribution} is \code{elliptic}, the
 multivariate normal distribution is used.}
 \item{preg}{Initial parameter estimates for the regression model.
 Only required for \code{linear model} if the \code{link} is not the
@@ -111,8 +118,19 @@ parameter.}
 for each response value, set to unity by default. For example, if a
 response is measured to two decimals, delta=0.01. Ignored if response
 has class, response or repeated.}
+\item{shfn}{If TRUE, the supplied variance function depends on the
+mean function. The name of this mean function must be the last
+argument of the variance function.}
+\item{common}{If TRUE, \code{mu} and \code{varfn} must both be
+functions with, as argument, a vector of parameters having some or all
+elements in common between them so that indexing is in common
+between them; all parameter estimates must be supplied in \code{preg}.
+If FALSE, parameters are distinct between the two functions and
+indexing starts at one in each function.}
 \item{envir}{Environment in which model formulae are to be
-interpreted or a data object of class, repeated, tccov, or tvcov.}
+interpreted or a data object of class, repeated, tccov, or tvcov.
+If \code{response} has class \code{repeated}, it is used as the
+environment.}
 \item{others}{Arguments controlling \code{\link{nlm}}.}
 }
 \description{
@@ -121,6 +139,9 @@ elliptically-contoured distribution, called the multivariate power
 exponential distribution. It includes the multivariate normal
 (power=1), the multivariate Laplace (power=0.5), and the multivariate
 uniform (power -> infinity) distributions as special cases.
+
+With two levels of nesting, the first is the individual and the second
+will consist of clusters within individuals.
 
 For clustered (non-longitudinal) data, where only random effects will
 be fitted, the `times' may be any strictly increasing sequence
@@ -133,6 +154,12 @@ and zero, one, or two levels of nesting can be handled.
 Nonlinear regression models can be supplied as formulae where
 parameters are unknowns. Factor variables cannot be used and
 parameters must be scalars. (See \code{\link{finterp}}.)
+
+When an AR(1) of \code{exponential} form and/or a single random
+intercept is estimated for the multivariate normal distribution,
+marginal and individual profiles can be plotted using
+\code{\link{profile}} and \code{\link{iprofile}} and residuals with
+\code{\link{plot.residuals}}.
 }
 \value{
 A list of class \code{elliptic} is returned.
@@ -141,7 +168,8 @@ A list of class \code{elliptic} is returned.
 \seealso{
 \code{\link{carma}}, \code{\link{finterp}}, \code{\link{gar}},
 \code{\link{gettvc}}, \code{\link{glmm}}, \code{\link{gnlmm}},
-\code{\link{gnlr}}, \code{\link{kalseries}}, \code{\link{potthoff}},
+\code{\link{gnlr}}, \code{\link{iprofile}}, \code{\link{kalseries}},
+\code{\link{potthoff}}, \code{\link{profile}},
 \code{\link{read.list}}, \code{\link{restovec}}, \code{\link{rmna}},
 \code{\link{tcctomat}}, \code{\link{tvctomat}}.
 }
@@ -181,6 +209,10 @@ elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5),
 # multivariate elliptical distribution
 elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5),
 	par=0.1, varfn=shape, pvar=log(c(0.5,0.2)), pell=1)
+# multivariate Student t distribution
+elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5),
+	par=0.1, varfn=shape, pvar=log(c(0.5,0.2)), pell=5,
+	distribution="Student t")
 # or equivalently with user-specified function
 # independence
 elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)))
@@ -192,6 +224,10 @@ elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)), par=0.1,
 # multivariate elliptical distribution
 elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)), par=0.1,
 	varfn=shape, pvar=log(c(0.5,0.2)), pell=1)
+# multivariate Student t distribution
+elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)), par=0.1,
+	varfn=shape, pvar=log(c(0.5,0.2)), pell=5,
+	distribution="Student t")
 # or with user-specified formula
 # independence
 elliptic(conc, model=~exp(absorption-volume)*
@@ -219,6 +255,14 @@ elliptic(conc, model=~exp(absorption-volume)*
 	preg=list(absorption=log(0.5),elimination=log(0.4),volume=log(0.1)),
 	varfn=~exp(b1-b2)*times*dose*exp(-exp(b1)*times),
 	par=0.1, pvar=list(b1=log(0.5),b2=log(0.2)), pell=1)
+# multivariate Student t distribution
+elliptic(conc, model=~exp(absorption-volume)*
+	dose/(exp(absorption)-exp(elimination))*
+	(exp(-exp(elimination)*times)-exp(-exp(absorption)*times)),
+	preg=list(absorption=log(0.5),elimination=log(0.4),volume=log(0.1)),
+	varfn=~exp(b1-b2)*times*dose*exp(-exp(b1)*times),
+	par=0.1, pvar=list(b1=log(0.5),b2=log(0.2)), pell=5,
+	distribution="Student t")
 #
 # generalized logistic regression with square-root transformation
 # and square  link
@@ -267,7 +311,7 @@ elliptic(y, model=~exp(yinf)*(1+((exp(yinf-y0))^b4-1)*
 	preg=list(y0=2,yinf=1,b3=0.1,b4=-1),
 	trans="sqrt", link="square", pre=1, par=0.1)
 #
-# multivariate elliptical distribution for outliers
+# multivariate elliptical and Student t distributions for outliers
 y <- matrix(rcauchy(40,mu(c(2,1.5,0.05,-2)),0.05),ncol=20,byrow=T)
 y[,2:20] <- y[,2:20]+0.5*(y[,1:19]-matrix(mu(c(2,1.5,0.05,-2)),
 	ncol=20,byrow=T)[,1:19])
@@ -278,4 +322,9 @@ elliptic(y, model="logistic", preg=c(1,1,0.1,-1), par=0.5)
 # then elliptic
 elliptic(y, model="logistic", preg=c(1,1,0.1,-1), pell=1)
 elliptic(y, model="logistic", preg=c(1,1,0.1,-1), par=0.5, pell=1)
+# finally Student t
+elliptic(y, model="logistic", preg=c(1,1,0.1,-1), pell=1,
+	distribution="Student t")
+elliptic(y, model="logistic", preg=c(1,1,0.1,-1), par=0.5, pell=1,
+	distribution="Student t")
 }

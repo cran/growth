@@ -127,6 +127,10 @@ if(!inherits(response,"repeated")){
 	response <- rmna(response=response, ccov=ccov)
 	if(!is.null(ccov))rm(ccov)}
 else {
+	if(is.null(ccov))response$ccov <- NULL
+	else if(inherits(ccov,"formula"))
+		response$ccov$ccov <- attr(finterp(ccov,envir=response,expand=F,name=paste(deparse(substitute(response)))),"model")[,-1,drop=F]
+	else stop("ccov must be a W&R formula")
 	ncv <- if(is.null(response$ccov$ccov)) 0
 		 else  ncol(response$ccov$ccov)}
 y <- response$response$y
@@ -343,14 +347,21 @@ z <- list(
 	gradient=grad,
 	iterations=iterations,
 	code=code)
-class(z) <- c("carma","recursive")
+class(z) <- "carma"
+if(resid)class(z) <- c(class(z),"recursive")
 return(z)}
 
 coefficients.carma <- function(z) list(beta=z$beta,coef=z$coefficients)
 deviance.carma <- function(z) 2*z$maxlike
 fitted.carma <- function(z, recursive=TRUE) if(recursive) z$rpred else z$pred
-residuals.carma <- function(z, recursive=TRUE)
-	if(recursive)z$rresiduals else (z$response$y-z$pred)/sqrt(z$mse)
+residuals.carma <- function(z, recursive=TRUE){
+	if(recursive)return(z$rresiduals)
+	else {
+		if(z$transform=="exp")z$response$y <- exp(z$response$y)
+		else if(z$transform=="square")z$response$y  <- z$response$y^2
+		else if(z$transform=="sqrt")z$response$y <- sqrt(z$response$y)
+		else if(z$transform=="log")z$response$y <- log(z$response$y)
+		return((z$response$y-z$pred)/sqrt(z$mse))}}
 
 print.carma <- function(z, digits = max(3, .Options$digits - 3)) {
 	if(!is.null(z$ccov$ccov))nccov <- ncol(z$ccov$ccov)
@@ -447,46 +458,52 @@ print.carma <- function(z, digits = max(3, .Options$digits - 3)) {
 		print.default(z$nlcorr, digits=digits)}
 	invisible(z)}
 
-plot.profile.carma <- function(z, times, ccov, plotse=T, add=F,
-	ylim=c(min(yy-3*se),max(yy+3*se)), lty=1, ylab="Response",
-	xlab="Time", ...){
+profile.carma <- function(z, times=NULL, ccov, plotse=T){
 	nccov <- ncol(z$ccov$ccov)
 	if(!is.null(z$ccov$ccov)){
 		if(missing(ccov))stop("Covariate values must be supplied")
 		else if(nccov!=length(ccov))
 			stop("Incorrect number of covariate values")}
-	if(missing(times))times <- seq(min(z$response$times),
-		max(z$response$times),length.out=25)
-	npts <- length(times)
-	yy <- rep(z$beta[1],npts)
+	z$ptimes <- if(is.null(times))seq(min(z$response$times),
+		max(z$response$times),length.out=25) else times
+	npts <- length(z$ptimes)
+	z$pred <- rep(z$beta[1],npts)
 	cc <- matrix(rep(1,npts),ncol=1)
 	if(z$torder>0)for(i in 1:z$torder) {
-		cc <- cbind(cc,(times-mean(z$response$times))^i)
-		yy <- yy+z$beta[i+1]*(times-mean(z$response$times))^i}
+		cc <- cbind(cc,(z$ptimes-mean(z$response$times))^i)
+		z$pred <- z$pred+z$beta[i+1]*(z$ptimes-mean(z$response$times))^i}
 	if(nccov>0){
 		jj <- z$torder+1
 		for(i in 1:nccov)for(j in 1:(z$interaction[i]+1)){
 			jj <- jj+1
 			cc <- cbind(cc,cc[,j]*ccov[i])
-			yy <- yy+z$beta[jj]*cc[,j]*ccov[i]}}
+			z$pred <- z$pred+z$beta[jj]*cc[,j]*ccov[i]}}
 	se <- NULL
 	for(i in 1:npts) se <- c(se,sqrt(cc[i,]%*%z$vbeta%*%cc[i,]))
-	if(!add)plot(times, yy, type="l", ylim=ylim, lty=lty, xlab=xlab,
-		ylab=ylab, ...)
-	else lines(times, yy, lty=lty)
-	if(plotse){
-		lines(times, yy+2*se, lty=3)
-		lines(times, yy-2*se, lty=3)}
-	z0 <- list(
-		times=times,
-		ccov=ccov,
-		profile=yy,
-		se=se)
-	invisible(z0)}
-
-plot.iprofile.carma <- function(z, nind=1, obs=T, add=F, plotsd=T, lty=NULL,
-	pch=NULL, ylab="Response", xlab="Time", main=NULL, ylim=NULL, ...){
-	if(missing(ylim))ylim <- c(min(z$rpred-3*z$sdr),max(z$rpred+3*z$sdr))
-	plot.iprofile.default(z, nind=nind, obs=obs, add=add, plotsd=plotsd,
-		lty=lty, pch=pch, ylab=ylab, xlab=xlab, main=main,
-		ylim=ylim, ...)}
+	if(z$transform=="exp"){
+		if(plotse){
+			se1 <- log(z$pred+2*se)
+			se2 <- log(z$pred-2*se)}
+		z$pred <- log(z$pred)}
+	else if(z$transform=="square"){
+		if(plotse){
+			se1 <- sqrt(z$pred+2*se)
+			se2 <- sqrt(z$pred-2*se)}
+		z$pred  <- sqrt(z$pred)}
+	else if(z$transform=="sqrt"){
+		if(plotse){
+			se1 <- (z$pred+2*se)^2
+			se2 <- (z$pred-2*se)^2}
+		z$pred <- z$pred^2}
+	else if(z$transform=="log"){
+		if(plotse){
+			se1 <- exp(z$pred+2*se)
+			se2 <- exp(z$pred-2*se)}
+		z$pred <- exp(z$pred)}
+	else {
+		if(plotse){
+			se1 <- z$pred+2*se
+			se2 <- z$pred-2*se}}
+	if(plotse)z$pse <- cbind(se1,se2)
+	class(z) <- "profile"
+	invisible(z)}

@@ -18,7 +18,7 @@ c  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 c
 c  SYNOPSIS
 c
-c     subroutine plra(theta,like,rxl,x,y,tvcov,ccov,dose,nobs,
+c     subroutine plra(theta,like,iist,rxl,x,y,tvcov,ccov,dose,nobs,
 c    +     nest,lnest,dev,nind,nld,nxrl,np,npell,npv,npvl,
 c    +     nccov,npvar,cvar,npre,npar,link,torder,inter,model,ar,
 c    +     tvc,beta,betacov,v,sigsq,ey,tb,mu,var)
@@ -30,7 +30,7 @@ c elliptical distribution with various autocorrelation functions,
 c one or two levels of random effects, and nonlinear regression.
 c
 c
-      subroutine plra(theta,like,rxl,x,y,tvcov,ccov,dose,nobs,
+      subroutine plra(theta,like,dist,rxl,x,y,tvcov,ccov,dose,nobs,
      +     nest,lnest,dev,nind,nld,nxrl,np,npell,npv,npvl,
      +     nccov,npvar,cvar,npre,npar,link,torder,inter,model,ar,
      +     tvc,beta,betacov,v,sigsq,ey,tb,mu,var)
@@ -39,7 +39,7 @@ c routine for computing -log(l) under the various models,
 c including both autoregression and (nested) random effects
 c
       implicit none
-      integer np,nind,nxrl,link,i,j,k,nccov,tvc,ar,nbs,npell,
+      integer np,nind,nxrl,link,i,j,k,nccov,tvc,ar,nbs,npell,dist,
      +     lnest,nm,torder,model,npv,npvar,npre,npar,nld,npvl,cvar
       integer nobs(nind),inter(nccov),nest(1)
       double precision x(1),y(1),beta(npvl),betacov(npvl,npvl),
@@ -148,10 +148,17 @@ c     calculate likelihood for multivariate elliptical distribution
 c
          if(npell.gt.0)then
             if(pow.gt.40)pow=40.
-            call flgamma(dble(nobs(i))/2.,tmp1)
-            call flgamma(1.+nobs(i)/(2.*pow),tmp2)
-            like=like+(ldet+qf**pow)/2.+tmp2+(1.+nobs(i)/(2.*pow))*
-     +           dlog(dble(2))-dlog(dble(nobs(i)))-tmp1
+            if(dist.eq.1)then
+               call flgamma(dble(nobs(i))/2.,tmp1)
+               call flgamma(1.+nobs(i)/(2.*pow),tmp2)
+               like=like+(ldet+qf**pow)/2.+tmp2+(1.+nobs(i)/(2.*pow))*
+     +              dlog(dble(2))-dlog(dble(nobs(i)))-tmp1
+            else
+               call flgamma((pow+nobs(i))/2.,tmp1)
+               call flgamma(pow/2,tmp2)
+               like=like+(ldet+nobs(i)*dlog(pow)+(pow+nobs(i))
+     +              *dlog(1+qf/pow))/2.-tmp1+tmp2
+            endif
          else   
             like=like+ldet+qf
          endif
@@ -362,7 +369,7 @@ c
          if(nxrl.gt.1.and.rxl(i).gt.1)then
             thetap(3)=thetap(3)+theta(2+rxl(i))
          endif
-         d=dose
+         if(tvc.ne.1)d=dose
          if(dabs(thetap(1)-thetap(2)).gt.0.0001)then
             do 59 j=1,nobs
                if(tvc.eq.1)d=tvcov(nm+j)
@@ -441,7 +448,7 @@ c
 c     nonlinear variance function for pk model
 c
          if(model.eq.4.and.npvar.eq.4)then
-            d=dose
+            if(tvc.ne.1)d=dose
             if(dabs(theta(npv+1)-theta(npv+2)).gt.0.001)then
                do 69 j=1,nobs
                   if(tvc.eq.1)d=tvcov(nm+j)

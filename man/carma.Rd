@@ -8,12 +8,6 @@ carma(response, ccov=NULL, times=NULL, torder=0, interaction,
 	iterlim=100, typsiz=abs(p), ndigit=10, gradtol=0.00001,
 	fscale=1, stepmax=10*sqrt(p\%*\%p), steptol=0.00001)
 }
-\alias{carma}
-\alias{coefficients.carma}
-\alias{deviance.carma}
-\alias{fitted.carma}
-\alias{residuals.carma}
-\alias{print.carma}
 \arguments{
 \item{response}{A list of two column matrices with response values and
 times for each individual, one matrix or dataframe of response
@@ -21,8 +15,9 @@ values, or an object of either class, response (created by
 \code{\link{restovec}}) or repeated (created by \code{\link{rmna}}).}
 \item{ccov}{A matrix of columns of baseline covariates with one row per
 individual, a model formula using vectors of the same size, or an
-object of class, tccov (created by \code{\link{tcctomat}}). Ignored if
-response has class, repeated.}
+object of class, tccov (created by \code{\link{tcctomat}}). If
+response has class, repeated, the covariates must be supplied as a
+Wilkinson and Rogers formula unless none are to be used.}
 \item{times}{When response is a matrix, a vector of possibly unequally
 spaced times when they are the same for all individuals or a matrix of
 times. Not necessary if equally spaced. Ignored if response has class,
@@ -74,7 +69,7 @@ be fitted, the `times' may be any strictly increasing sequence
 distinguishing the responses on an individual.
 
 Marginal and individual profiles can be plotted using
-\code{\link{plot.profile}} and \code{\link{plot.iprofile}} and
+\code{\link{profile}} and \code{\link{iprofile}} and
 residuals with \code{\link{plot.residuals}}.
 }
 \value{
@@ -93,8 +88,8 @@ A State-space Approach. Chapman and Hall
 \author{R.H. Jones and J.K. Lindsey}
 \seealso{
 \code{\link{elliptic}}, \code{\link{gar}}, \code{\link{glmm}},
-\code{\link{gnlmm}}, \code{\link{kalseries}}, \code{\link{plot.profile}},
-\code{\link{plot.iprofile}}, \code{\link{plot.residuals}},
+\code{\link{gnlmm}}, \code{\link{iprofile}}, \code{\link{kalseries}},
+\code{\link{plot.residuals}}, \code{\link{profile}},
 \code{\link{potthoff}}, \code{\link{read.list}}, \code{\link{restovec}},
 \code{\link{rmna}}, \code{\link{tcctomat}}, \code{\link{tvctomat}}.
 }
