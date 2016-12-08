@@ -1,6 +1,6 @@
 c
 c  growth : A Library of Normal Distribution Growth Curve Models
-c  Copyright (C) 1998 J.K. Lindsey
+c  Copyright (C) 1998, 1999, 2000, 2001 J.K. Lindsey
 c
 c  This program is free software; you can redistribute it and/or modify
 c  it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ c
       INTEGER MAXRE,MAXAR
       PARAMETER(MAXRE=1,MAXAR=1)
 c
-      INTEGER NS,NT,NOD,NP,IND,I,JJ,LL
+      INTEGER NS,NT,NOD,NP,IND,JJ,LL
       DOUBLE PRECISION V,VEC(MAXRE),P(NP),P22(MAXRE,MAXRE),VARI
       double precision MSE,PAR(NP),T(NT),Y(NT),
      +RPRED(NT),PRED(NT),SDR(NT),RES(NT),AVE
@@ -156,7 +156,7 @@ C
 C Calculate innovation variance
 C
             IF(NOD.GT.0)THEN
-               EX(I)=P12(1,1)
+               EX(1)=P12(1,1)
                VEC(1)=P22(1,1)
             ENDIF
             HP(1)=H(1)*P11(1,1)

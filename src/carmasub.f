@@ -1,6 +1,6 @@
 c
 c  growth : A Library of Normal Distribution Growth Curve Models
-c  Copyright (C) 1998 J.K. Lindsey
+c  Copyright (C) 1998, 1999, 2000, 2001 J.K. Lindsey
 c
 c  This program is free software; you can redistribute it and/or modify
 c  it under the terms of the GNU General Public License as published by

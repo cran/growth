@@ -1,6 +1,6 @@
 c
 c  growth : A Library of Normal Distribution Growth Curve Models
-c  Copyright (C) 1998 J.K. Lindsey
+c  Copyright (C) 1998, 1999, 2000, 2001 J.K. Lindsey
 c
 c  This program is free software; you can redistribute it and/or modify
 c  it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@ c
 c  SYNOPSIS
 c
 c     subroutine plra(theta,like,iist,rxl,x,y,tvcov,ccov,dose,nobs,
-c    +     nest,lnest,dev,nind,nld,nxrl,np,npell,npv,npvl,
-c    +     nccov,npvar,cvar,npre,npar,link,torder,inter,model,ar,
-c    +     tvc,beta,betacov,v,sigsq,ey,tb,mu,var)
+c    +     nbs,nest,lnest,dev,nind,nld,nxrl,np,npell,npv,npvl,
+c    +     nccov,npvar,cvar,ccvar,twins,npre,npar,link,torder,inter,
+c    +     model,ar,tvc,beta,betacov,v,sigsq,ey,tb,mu,var,covar)
 c
 c  DESCRIPTION
 c
@@ -31,21 +31,23 @@ c one or two levels of random effects, and nonlinear regression.
 c
 c
       subroutine plra(theta,like,dist,rxl,x,y,tvcov,ccov,dose,nobs,
-     +     nest,lnest,dev,nind,nld,nxrl,np,npell,npv,npvl,
-     +     nccov,npvar,cvar,npre,npar,link,torder,inter,model,ar,
-     +     tvc,beta,betacov,v,sigsq,ey,tb,mu,var)
+     +     nbs,nest,lnest,dev,nind,nld,nxrl,np,npell,npv,npvl,
+     +     nccov,npvar,cvar,ccvar,twins,npre,npar,link,torder,inter,
+     +     model,ar,tvc,beta,betacov,v,sigsq,ey,tb,mu,var,covar)
 c
 c routine for computing -log(l) under the various models,
 c including both autoregression and (nested) random effects
 c
       implicit none
       integer np,nind,nxrl,link,i,j,k,nccov,tvc,ar,nbs,npell,dist,
-     +     lnest,nm,torder,model,npv,npvar,npre,npar,nld,npvl,cvar
-      integer nobs(nind),inter(nccov),nest(1)
-      double precision x(1),y(1),beta(npvl),betacov(npvl,npvl),
-     +     tvcov(1),rxl(nind),dev(1),ccov(nind,nccov),ey(nld),
+     +     lnest,nm,torder,model,npv,npvar,npre,npar,nld,npvl,cvar,
+     +     ccvar,twins
+      integer nobs(nind),inter(nccov),nest(*)
+      double precision x(*),y(*),beta(npvl),betacov(npvl,npvl),
+     +     tvcov(*),rxl(nind),dev(*),ccov(nind,nccov),ey(nld),
      +     like,theta(np),tb(npvl),v(nld,nld),tausq(2),sigsq(nld),
-     +     rho,ldet,qf,dose(nind),mu(1),var(1),pow,tmp1,tmp2
+     +     rho,ldet,qf,qf2,qf3,dose(nind),mu(*),var(*),pow,tmp1,tmp2,
+     +     covar(*)
 c
 c     compute parameters of the covariance matrix
 c
@@ -56,7 +58,7 @@ c
             sigsq(i)=tmp1
  1       continue
       endif
-      if(npre.gt.0)then
+      if(npre.gt.0.and.ccvar.eq.0)then
          do 3 i=1,npre
             if(theta(npv+npvar+i).gt.24)theta(npv+npvar+i)=24.
             tausq(i)=dexp(theta(npv+npvar+i))
@@ -80,24 +82,13 @@ c
          rho=0.
       endif
 c
-c     multivariate elliptical contour distribution
-c
-      if(npell.gt.0)then
-         if(link.eq.1.and.cvar.eq.0)then
-            i=npvl
-         else
-            i=0
-         endif
-         pow=dexp(theta(np-i))
-      endif
-c
 c estimate parameters in the linear model
 c
       if(model.eq.1)then
-         if(cvar.eq.0.and.link.eq.1)then
+         if(cvar.eq.0.and.ccvar.eq.0.and.link.eq.1.and.dist.ne.4)then
             call plml(x,y,beta,betacov,tb,ccov,tvcov,np,npv,npvl,
      +           nld,npvar,nind,nobs,nccov,torder,inter,tvc,v,
-     +           sigsq,tausq,rho,nest,lnest,npar,npre,ar,nbs)
+     +           sigsq,tausq,rho,nest,lnest,npar,npre,ar,nbs,twins)
          else
             npvl=npv
             do 2 i=1,npv
@@ -108,13 +99,9 @@ c
 c
 c     compute the likelihood components
 c
-      nbs=0
-      do 19 i=1,nind
-         nbs=nbs+nobs(i)
- 19   continue
       like=0.d0
       nm=0
-      do 49 i=1,nind
+      do 6 i=1,nind
 c
 c     if necessary, compute variance function
 c
@@ -124,10 +111,14 @@ c
      +        nld,beta,npvl,inter,sigsq,cvar,var,tb,nbs,mu)
          endif
 c
+c     if necessary, store value of covariance function
+c
+         if(ccvar.eq.1)tausq(1)=covar(nm+1)
+c
 c     compute the inverse of variance matrix and its log determinant
 c
-         call cmpvar(v,ldet,sigsq,tausq,rho,nind,i,nm,x,nobs(i),nest,
-     +        lnest,nld,npre,npar,ar)
+         call cmpvar(v,ldet,sigsq,tausq,rho,nind,i,nm,x,nobs(i),
+     +        nest,lnest,nld,npre,npar,ar,twins)
 c
 c     compute the mean function
 c
@@ -137,54 +128,105 @@ c
 c
 c     compute the quadratic form
 c
-         qf=0.
-         do 29 k=1,nobs(i)
-            do 39 j=1,nobs(i)
-               qf=qf+dev(nm+k)*v(k,j)*dev(nm+j)
- 39         continue
- 29      continue
+         if(npell.gt.0.or.dist.ne.4)then
+            qf=0.
+            do 4 k=1,nobs(i)
+               do 5 j=1,nobs(i)
+                  qf=qf+dev(nm+k)*v(k,j)*dev(nm+j)
+ 5             continue
+ 4          continue
+         endif
 c
-c     calculate likelihood for multivariate elliptical distribution
+c     calculate likelihood for multivariate distribution
 c
          if(npell.gt.0)then
-            if(pow.gt.40)pow=40.
-            if(dist.eq.1)then
+            if(link.eq.1.and.cvar.eq.0)then
+               if(dist.eq.4)then
+                  pow=theta(np-npvl)
+               else
+                  pow=dexp(theta(np-npvl))
+               endif
+            else
+               if(dist.eq.4)then
+                  pow=theta(np)
+               else
+                  pow=dexp(theta(np))
+               endif
+            endif
+            if(dist.ne.4.and.pow.gt.40)pow=40.
+            if(dist.eq.2)then
+c     multivariate power exponential
                call flgamma(dble(nobs(i))/2.,tmp1)
                call flgamma(1.+nobs(i)/(2.*pow),tmp2)
                like=like+(ldet+qf**pow)/2.+tmp2+(1.+nobs(i)/(2.*pow))*
      +              dlog(dble(2))-dlog(dble(nobs(i)))-tmp1
-            else
+            else if(dist.eq.3)then
+c     multivariate Student t
                call flgamma((pow+nobs(i))/2.,tmp1)
                call flgamma(pow/2,tmp2)
                like=like+(ldet+nobs(i)*dlog(pow)+(pow+nobs(i))
      +              *dlog(1+qf/pow))/2.-tmp1+tmp2
+            else if(dist.eq.4)then
+c     multivariate Laplace
+               qf2=0.
+               qf3=0.
+               do 9 k=1,nobs(i)
+                  do 10 j=1,nobs(i)
+                     qf2=qf2+v(j,k)
+                     qf3=qf3+dev(nm+j)*v(j,k)
+ 10               continue
+ 9             continue
+               qf2=qf2*pow*pow
+               qf3=qf3*pow
+               tmp2=(2.-nobs(i))/2.
+               call fbesselk(dsqrt((2+qf2)*qf),tmp2,tmp1)
+               like=like-qf3+ldet/2.0-(tmp2/2.)*dlog(qf/(2+qf2))
+     +              -dlog(tmp1)
             endif
+         else if(dist.eq.4)then
+c     multivariate Laplace
+            qf=0.
+            qf2=0.
+            qf3=0.
+            do 7 k=1,nobs(i)
+               tmp2=y(nm+k)-dev(nm+k)
+               do 8 j=1,nobs(i)
+                  qf=qf+y(nm+j)*v(j,k)*y(nm+k)
+                  qf2=qf2+(y(nm+j)-dev(nm+j))*v(j,k)*tmp2
+                  qf3=qf3+y(nm+j)*v(j,k)*tmp2
+ 8             continue
+ 7          continue
+            tmp2=(2.-nobs(i))/2.
+            call fbesselk(dsqrt((2+qf2)*qf),tmp2,tmp1)
+            like=like-qf3+ldet/2.0-(tmp2/2.)*dlog(qf/(2+qf2))
+     +           -dlog(tmp1)
          else   
             like=like+ldet+qf
          endif
          nm=nm+nobs(i)
- 49   continue
+ 6    continue
 c
 c     calculate likelihood for multivariate normal distribution
 c
-      if(npell.eq.0)like=like/2.+nbs*log(2.)/2.
+      if(dist.eq.1)like=like/2.+nbs*dlog(2.d0)/2.
+      if(dist.eq.4)like=like+(nbs/2.-nind)*dlog(2.0d0)
       return
       end
 c
 c
       subroutine plml(x,y,beta,betacov,tb,ccov,tvcov,np,npv,
      +     npvl,nld,npvar,nind,nobs,nccov,torder,inter,tvc,
-     +     v,sigsq,tausq,rho,nest,lnest,npar,npre,ar,nbs)
+     +     v,sigsq,tausq,rho,nest,lnest,npar,npre,ar,nbs,twins)
 c
 c estimate parameters in linear part of model
 c
       implicit none
       integer npvl,npvar,nind,nccov,torder,lnest,np,npv,nld,info,
-     +     nm,i,j,k,l,m,j1,j2,k1,k2,npar,npre,tvc,ar,nbs
-      integer nobs(nind),inter(nccov),nest(1)
+     +     nm,i,j,k,l,m,j1,j2,k1,k2,npar,npre,tvc,ar,nbs,twins
+      integer nobs(nind),inter(nccov),nest(*)
       double precision beta(npvl),betacov(npvl,npvl),tb(npvl),
-     +     ccov(nind,nccov),v(nld,nld),tvcov(1),t1,t2,det(2),
-     +     x(1),y(1),sigsq(nld),tausq(2),rho,ldet
+     +     ccov(nind,nccov),v(nld,nld),tvcov(*),t1,t2,det(2),
+     +     x(*),y(*),sigsq(nld),tausq(2),rho,ldet
 c
       do 17 j=1,npvl
          tb(j)=0.
@@ -198,7 +240,7 @@ c
 c     compute the inverse of variance matrix for individual i
 c
          call cmpvar(v,ldet,sigsq,tausq,rho,nind,i,nm,x,nobs(i),
-     +        nest,lnest,nld,npre,npar,ar)
+     +        nest,lnest,nld,npre,npar,ar,twins)
 c
 c     setup generalized least squares
 c
@@ -288,9 +330,9 @@ c
       integer nobs,nm,i,j,k,link,model,nxrl,nld,torder,npv,npvar,
      +     nind,np,npvl,nccov,k1,k2,tvc,nbs
       integer inter(nccov)
-      double precision theta(np),thetap(4),ey(nld),tvcov(1),
-     +     x(1),y(1),rxl(nind),ccov(nind,nccov),beta(npvl),
-     +     dose,dev(1),beta1,delta,tmp,d,tb(npvl),mu(1)
+      double precision theta(np),thetap(4),ey(nld),tvcov(*),
+     +     x(*),y(*),rxl(nind),ccov(nind,nccov),beta(npvl),
+     +     dose,dev(*),beta1,delta,tmp,d,tb(npvl),mu(*)
 c
 c     linear/polynomial model
 c
@@ -333,7 +375,8 @@ c     generalized logistic model
 c
       else if(model.eq.3)then
          if(tvc.eq.1)then
-            beta1=theta(rxl(i)+3)
+            j=rxl(i)
+            beta1=theta(j+3)
             thetap(1)=theta(1)
             thetap(2)=theta(1)
             thetap(3)=theta(2)
@@ -351,7 +394,8 @@ c
  36         continue
             if(nxrl.gt.1.and.rxl(i).gt.1)then
                do 37 j=1,4
-                  thetap(j)=thetap(j)+theta(j+(rxl(i)-1)*4)
+                  k=j+(rxl(i)-1)*4
+                  thetap(j)=thetap(j)+theta(k)
  37            continue
             endif
             do 2 j=1,nobs
@@ -367,7 +411,8 @@ c
             thetap(j)=theta(j)
  6       continue
          if(nxrl.gt.1.and.rxl(i).gt.1)then
-            thetap(3)=thetap(3)+theta(2+rxl(i))
+            j=2+rxl(i)
+            thetap(3)=thetap(3)+theta(j)
          endif
          if(tvc.ne.1)d=dose
          if(dabs(thetap(1)-thetap(2)).gt.0.0001)then
@@ -420,9 +465,9 @@ c
       integer nobs,nm,i,j,k,model,nld,npv,nind,np,nccov,link,nxrl,
      +     torder,npvar,npvl,cvar,tvc,nbs
       integer inter(nccov)
-      double precision theta(np),tvcov(1),ccov(nind,nccov),
-     +     sigsq(nld),tmp,d,dose,dev(1),rxl(nind),x(1),y(1),
-     +     ey(nld),beta(npvl),var(1),tb(npvl),mu(1)
+      double precision theta(np),tvcov(*),ccov(nind,nccov),
+     +     sigsq(nld),tmp,d,dose,dev(*),rxl(nind),x(*),y(*),
+     +     ey(nld),beta(npvl),var(*),tb(npvl),mu(*)
 c
 c     an R function for the variance
 c 
@@ -490,15 +535,15 @@ c
       end
 c
 c
-      subroutine cmpvar(v,ldet,sigsq,tausq,rho,nind,i,nm,x,nobs,nest,
-     +     lnest,nld,npre,npar,ar)
+      subroutine cmpvar(v,ldet,sigsq,tausq,rho,nind,i,nm,x,nobs,
+     +     nest,lnest,nld,npre,npar,ar,twins)
 c
 c compute the variance matrix for the unit
 c
       implicit none
-      integer nobs,i,j,k,nm,nest(1),lnest,nn1,nn2,k1,j1,
-     +     nind,nld,info,npre,npar,ar
-      double precision x(1),v(nld,nld),det(2),sigsq(nld),tausq(2),
+      integer nobs,i,j,k,nm,nest(*),lnest,nn1,nn2,k1,j1,
+     +     nind,nld,info,npre,npar,ar,twins
+      double precision x(*),v(nld,nld),det(2),sigsq(nld),tausq(2),
      +     rho,ldet,tmp
 c
       k1=0
@@ -519,7 +564,15 @@ c
                   nn2=nest(nm+j)
                endif
             endif
-            v(k,j)=tausq(1)
+            if(twins.eq.0)then
+               v(k,j)=tausq(1)
+            else
+               if(j.ne.k)then
+                  v(k,j)=tausq(1)
+               else
+                  v(k,j)=0.0
+               endif
+            endif
             if(k1.eq.j1)then
                v(k,j)=v(k,j)+tausq(2)
                if(k.eq.j)then
@@ -550,7 +603,7 @@ c
                      endif
                   else
                      tmp=tmp*(2*rho*x(nm+j)+dexp(-rho*x(nm+j))+
-     +                    +dexp(-rho*x(nm+k))-1-exp(-rho*
+     +                    dexp(-rho*x(nm+k))-1-exp(-rho*
      +                    dabs(x(nm+k)-x(nm+j))))/(2*rho**3)
                   endif
                   v(k,j)=v(k,j)+tmp
@@ -567,22 +620,21 @@ c
 c     factor v and compute the inverse and determinant
 c
       if(npre+npar.eq.0)then
-         ldet=1
+         ldet=0.0
          do 2 j=1,nobs
-            ldet=ldet*v(j,j)
+            ldet=ldet+dlog(v(j,j))
             v(j,j)=1/v(j,j)
  2       continue
-         ldet=dlog(ldet)
       else
          call dpofa(v,nld,nobs,info)
          call dpodi(v,nld,nobs,det,11)
-         ldet=dlog(det(1)*10.0**det(2))
+         ldet=dlog(det(1))+det(2)*dlog(10.0d0)
+         do 8 k=2,nobs
+            do 18 j=1,k-1
+               v(k,j)=v(j,k)
+ 18         continue
+ 8       continue
       endif
-      do 8 k=2,nobs
-         do 18 j=1,k-1
-            v(k,j)=v(j,k)
- 18      continue
- 8    continue
       return
       end
 c
