@@ -377,7 +377,7 @@ if(!is.null(position)){
 		stop(paste("Random effects position must have",nre,"rows"))
 	if(dim(position)[2]!=2)stop("Position matrix must have two columns")
 	if((any(position[,1]<1)||any(position[,1]>nre)||any(position[,2]<1)||
-		any(position[,2]>nre))||position[,1]>position[,2])
+		any(position[,2]>nre))||any(position[,1]>position[,2]))
 		stop("Position for covariance matrix out of range")
 	if(max(position[,2])>torder)
 		warning("number of random effects greater than order of polynomial in time")
@@ -615,7 +615,7 @@ cname <- "(Intercept)"
 if(z$torder>0)cname <- c(cname,paste("t^",1:z$torder,sep=""))
 if(nccov>0)for(i in 1:nccov){
 	cname <- c(cname,colnames(z$ccov$ccov)[i])
-	if(!is.na(z$interaction)&&z$interaction[i]>0){
+	if(!is.na(z$interaction[1])&&z$interaction[i]>0){
 		cname <- c(cname,paste(colnames(z$ccov$ccov)[i],".t^",1:z$interaction[i],sep=""))}}
 dimnames(coef.table) <- list(cname, c("estimate", "se"))
 print.default(coef.table, digits=digits, print.gap=2)

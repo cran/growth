@@ -429,7 +429,7 @@
 ##' @importFrom graphics abline lines plot 
 ##' @importFrom stats contr.poly fft model.frame model.matrix na.fail nlm terms var
 ##' @import rmutil
-##' @useDynLib growth
+##' @useDynLib growth, .registration = TRUE
 elliptic <- function(response=NULL, model="linear", distribution="normal",
 	times=NULL, dose=NULL, ccov=NULL, tvcov=NULL, nest=NULL,
 	torder=0, interaction=NULL, transform="identity",

@@ -48,12 +48,11 @@ potthoff(y, ~x, torder="f")
 potthoff(y, ~x, torder=1)
 
 }
-\author{
-J.K. Lindsey
-}
 \seealso{
 \code{\link[growth]{carma}}, \code{\link[growth]{elliptic}},
 \code{\link{lm}}.
 }
+\author{
+J.K. Lindsey
+}
 \keyword{models}
-

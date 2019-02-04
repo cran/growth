@@ -10,12 +10,12 @@
 pergram(y)
 
 \method{plot}{pergram}(x, add = FALSE, lty = 1, xlab = "Frequency",
-  ylab = "Periodogram", main = "Periodogram", ylim = c(0, max(po[, 2])),
-  ...)
+  ylab = "Periodogram", main = "Periodogram", ylim = c(0, max(po[,
+  2])), ...)
 
 \method{plot_cum}{pergram}(x, xlab = "Frequency", ylab = "Periodogram",
-  main = "Cumulative periodogram", ylim = c(0, max(cpo + 1.358/(a + 0.12 +
-  0.11/a))), ...)
+  main = "Cumulative periodogram", ylim = c(0, max(cpo + 1.358/(a +
+  0.12 + 0.11/a))), ...)
 }
 \arguments{
 \item{y}{A time series vector.}
@@ -51,6 +51,7 @@ periodogram.
 
 \item \code{plot_cum}: Plot_cum method
 }}
+
 \examples{
 
 y <- rnorm(100)
@@ -63,4 +64,3 @@ plot_cum(z)
 J.K. Lindsey
 }
 \keyword{hplot}
-

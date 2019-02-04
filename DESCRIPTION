@@ -1,5 +1,5 @@
 Package: growth
-Version: 1.1.0
+Version: 1.1.1
 Title: Multivariate Normal and Elliptically-Contoured Repeated
         Measurements Models
 Authors@R: c(
@@ -11,16 +11,16 @@ Description: Functions for fitting various normal theory (growth
     with ARMA and random effects dependence.
 License: GPL (>= 2)
 URL: http://www.commanster.eu/rcode.html
-BugReports: https:/github.com/swihart/growth/issues
+BugReports: https://github.com/swihart/growth/issues
 Encoding: UTF-8
 LazyData: true
 LazyLoad: true
-RoxygenNote: 5.0.1
+RoxygenNote: 6.1.1
 NeedsCompilation: yes
-Packaged: 2016-12-08 02:02:08 UTC; swihartbj
+Packaged: 2019-02-04 17:03:32 UTC; swihartbj
 Author: Bruce Swihart [cre, aut],
   Jim Lindsey [aut] (Jim created this package, Bruce is maintaining the
     CRAN version)
 Maintainer: Bruce Swihart <bruce.swihart@gmail.com>
 Repository: CRAN
-Date/Publication: 2016-12-08 15:29:58
+Date/Publication: 2019-02-04 17:23:22 UTC

@@ -44,12 +44,11 @@ tvc <- data.frame(eye=c(rep(1,4),rep(2,4)),power=c(1:4,1:4))
 summary(rmaov(y, tvc))
 
 }
-\author{
-Ralf Goertz (ralf.goertz@uni-jena.de)
-}
 \seealso{
 \code{\link[growth]{carma}}, \code{\link[growth]{elliptic}},
 \code{\link{lm}}, \code{\link[growth]{potthoff}}.
 }
+\author{
+Ralf Goertz (ralf.goertz@uni-jena.de)
+}
 \keyword{models}
-

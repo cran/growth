@@ -1,4 +1,12 @@
 #------------------------------------------------------------------------------
+#version 1.1.1
+#------------------------------------------------------------------------------
+
+  * Fixed an Found no calls to: ‘R_registerRoutines’, ‘R_useDynamicSymbols’ NOTE.
+  * Fixed BUGreports url in DESCRIPTION
+  * corrected Fatal error: length > 1 in coercion to logical (raised on R-devel check)
+  
+#------------------------------------------------------------------------------
 #version 1.1.0
 #------------------------------------------------------------------------------
 

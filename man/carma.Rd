@@ -2,20 +2,21 @@
 % Please edit documentation in R/carma.r
 \name{carma}
 \alias{carma}
-\alias{coef.carma}
-\alias{deviance.carma}
 \alias{fitted.carma}
 \alias{mprofile.carma}
-\alias{print.carma}
 \alias{residuals.carma}
+\alias{coef.carma}
+\alias{deviance.carma}
+\alias{print.carma}
 \title{Continuous ARMA for Unequally Spaced Repeated Measurements}
 \usage{
 carma(response = NULL, ccov = NULL, times = NULL, torder = 0,
   interaction, arma = c(0, 0, 0), parma = NULL, pre = NULL,
-  position = NULL, iopt = TRUE, resid = TRUE, transform = "identity",
-  delta = NULL, envir = parent.frame(), print.level = 0,
-  typsize = abs(p), ndigit = 10, gradtol = 1e-05, steptol = 1e-05,
-  iterlim = 100, fscale = 1, stepmax = 10 * sqrt(p \%*\% p))
+  position = NULL, iopt = TRUE, resid = TRUE,
+  transform = "identity", delta = NULL, envir = parent.frame(),
+  print.level = 0, typsize = abs(p), ndigit = 10, gradtol = 1e-05,
+  steptol = 1e-05, iterlim = 100, fscale = 1, stepmax = 10 * sqrt(p
+  \%*\% p))
 
 \method{coef}{carma}(object, ...)
 
@@ -163,6 +164,7 @@ their use in calculation of the covariance function.
 
 \item \code{mprofile}: Special marginal profiles with SEs
 }}
+
 \examples{
 
 y <- matrix(rnorm(40),ncol=5)
@@ -184,9 +186,6 @@ carma(y, ccov=~x1+x2, interact=c(2,0), torder=3, pre=c(-0.4,0.1),
 	position=rbind(c(1,1),c(2,2)))
 
 }
-\author{
-R.H. Jones and J.K. Lindsey
-}
 \references{
 Jones, R. H. and Ackerson, L. M. (1991) Serial correlation in
 unequally spaced longitudinal data. Biometrika, 77, 721-731.
@@ -204,5 +203,7 @@ State-space Approach. Chapman and Hall
 \code{\link[rmutil]{rmna}}, \code{\link[rmutil]{tcctomat}},
 \code{\link[rmutil]{tvctomat}}.
 }
+\author{
+R.H. Jones and J.K. Lindsey
+}
 \keyword{models}
-

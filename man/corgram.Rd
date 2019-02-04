@@ -53,4 +53,3 @@ corgram(y, partial=TRUE)
 J.K. Lindsey
 }
 \keyword{hplot}
-
